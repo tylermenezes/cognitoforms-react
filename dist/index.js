@@ -1,5 +1,11 @@
 "use strict";
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -12,6 +18,8 @@ function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
+/* eslint-disable import/no-unresolved */
+
 /* eslint-disable no-undef */
 var React = require('react');
 
@@ -22,6 +30,14 @@ var _require = require('react'),
     useReducer = _require.useReducer;
 
 var PropTypes = require('prop-types');
+/**
+ * Prepares a message for CognitoForms
+ *
+ * @param {string} event The event name (init, setCss, or prefill are supported)
+ * @param {object} data Event data to send
+ * @returns {string} Message to send with postMessage
+ */
+
 
 var getMessage = function getMessage(event, data) {
   return JSON.stringify({
@@ -32,12 +48,14 @@ var getMessage = function getMessage(event, data) {
 /**
  * A CognitoForms iframe embed, with styling and prefills built-in!
  *
- * @param {string} accountId The CognitoForms account ID (the random text after /f/ in your embed code)
- * @param {string} formId The form number (the integer in your embed code)
- * @param {string?} css URL or CSS code to load in the form.
- * @param {object?} prefill Object representing form fields to prefill on the page.
- * @param {React.Component} loading React element to show when the form is loading.
- * @returns {React.Component}
+ * @param {object} params React params
+ * @param {string} params.accountId         The CognitoForms account ID (the random text after /f/ in your embed code)
+ * @param {string} params.formId            The form number (the integer in your embed code)
+ * @param {string?} params.css              URL or CSS code to load in the form.
+ * @param {object?} params.prefill          Object representing form fields to prefill on the page.
+ * @param {React.Component} params.loading  React element to show when the form is loading.
+ * @param {object?} params.style            Style to apply to the form.
+ * @returns {React.Component}               React component.
  */
 
 
@@ -46,7 +64,8 @@ var Form = function Form(_ref) {
       formId = _ref.formId,
       css = _ref.css,
       prefill = _ref.prefill,
-      loading = _ref.loading;
+      loading = _ref.loading,
+      style = _ref.style;
   var ref = useRef();
 
   var _useState = useState(false),
@@ -101,6 +120,9 @@ var Form = function Form(_ref) {
       }, 1000);
     }
   };
+  /**
+   * Processes a postMessage from CognitoForms.
+   */
 
   var onMessageRecieved = function onMessageRecieved(_ref5) {
     var data = _ref5.data,
@@ -119,7 +141,7 @@ var Form = function Form(_ref) {
       return window.removeEventListener('message', onMessageRecieved);
     };
   }, []); // This is a dumb hack to fix the fact that CognitoForms doesn't dispatch resize events when the form changes size,
-  // only when the window changes size.
+  // only when the window changes size. TODO: follow up whenever CognitoForms fixes this.
 
   useEffect(function () {
     var interval = setInterval(function () {
@@ -139,11 +161,12 @@ var Form = function Form(_ref) {
       width: "100%",
       height: height + (grow ? 1 : 0),
       ref: ref,
-      style: {
+      style: _objectSpread({
         height: "".concat(height + (grow ? 1 : 0), "px"),
         display: !loaded && 'none',
-        marginBottom: "".concat(grow ? 0 : 1, "px")
-      }
+        marginBottom: "".concat(grow ? 0 : 1, "px"),
+        transition: 'all 0.25s ease-in-out'
+      }, style || {})
     }))
   );
 };
@@ -153,11 +176,13 @@ Form.propTypes = {
   formId: PropTypes.string.isRequired,
   css: PropTypes.string,
   prefill: PropTypes.object,
-  loading: PropTypes.element
+  loading: PropTypes.element,
+  style: PropTypes.object
 };
 Form.defaultProps = {
   css: null,
   prefill: null,
-  loading: null
+  loading: null,
+  style: {}
 };
 module.exports = Form;

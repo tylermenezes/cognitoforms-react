@@ -17,7 +17,7 @@
     "prop-types": "^15.7.2"
   },
   "name": "@tylermenezes/cognitoforms-react",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Easily embed CognitoForms forms in React",
   "main": "dist/index.js",
   "repository": "https://github.com/tylermenezes/cognitoforms-react",

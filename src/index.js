@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 /* eslint-disable no-undef */
 
 const React = require('react');
@@ -6,20 +7,29 @@ const {
 } = require('react');
 const PropTypes = require('prop-types');
 
+/**
+ * Prepares a message for CognitoForms
+ *
+ * @param {string} event The event name (init, setCss, or prefill are supported)
+ * @param {object} data Event data to send
+ * @returns {string} Message to send with postMessage
+ */
 const getMessage = (event, data) => JSON.stringify({ event, data });
 
 /**
  * A CognitoForms iframe embed, with styling and prefills built-in!
  *
- * @param {string} accountId The CognitoForms account ID (the random text after /f/ in your embed code)
- * @param {string} formId The form number (the integer in your embed code)
- * @param {string?} css URL or CSS code to load in the form.
- * @param {object?} prefill Object representing form fields to prefill on the page.
- * @param {React.Component} loading React element to show when the form is loading.
- * @returns {React.Component}
+ * @param {object} params React params
+ * @param {string} params.accountId         The CognitoForms account ID (the random text after /f/ in your embed code)
+ * @param {string} params.formId            The form number (the integer in your embed code)
+ * @param {string?} params.css              URL or CSS code to load in the form.
+ * @param {object?} params.prefill          Object representing form fields to prefill on the page.
+ * @param {React.Component} params.loading  React element to show when the form is loading.
+ * @param {object?} params.style            Style to apply to the form.
+ * @returns {React.Component}               React component.
  */
 const Form = ({
-  accountId, formId, css, prefill, loading,
+  accountId, formId, css, prefill, loading, style,
 }) => {
   const ref = useRef();
   const [loaded, setLoaded] = useState(false);
@@ -47,6 +57,9 @@ const Form = ({
     },
   };
 
+  /**
+   * Processes a postMessage from CognitoForms.
+   */
   const onMessageRecieved = ({ data, source }) => {
     if (!ref.current || source !== ref.current.contentWindow) return;
     if (typeof data !== 'string') return;
@@ -83,6 +96,8 @@ const Form = ({
           height: `${height + (grow ? 1 : 0)}px`,
           display: !loaded && 'none',
           marginBottom: `${grow ? 0 : 1}px`,
+          transition: 'all 0.25s ease-in-out',
+          ...(style || {}),
         }}
       />
     </React.Fragment>
@@ -94,11 +109,13 @@ Form.propTypes = {
   css: PropTypes.string,
   prefill: PropTypes.object,
   loading: PropTypes.element,
+  style: PropTypes.object,
 };
 Form.defaultProps = {
   css: null,
   prefill: null,
   loading: null,
+  style: {},
 };
 
 module.exports = Form;
