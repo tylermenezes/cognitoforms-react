@@ -1,7 +1,9 @@
 /* eslint-disable no-undef */
 
 const React = require('react');
-const { useState, useEffect, useRef } = require('react');
+const {
+  useState, useEffect, useRef, useReducer,
+} = require('react');
 const PropTypes = require('prop-types');
 
 const getMessage = (event, data) => JSON.stringify({ event, data });
@@ -22,6 +24,9 @@ const Form = ({
   const ref = useRef();
   const [loaded, setLoaded] = useState(false);
   const [height, setHeight] = useState(100);
+  const [grow, dispatchGrow] = useReducer((v) => !v, false);
+
+
   useEffect(() => {
     setLoaded(false);
     setHeight(100);
@@ -56,22 +61,31 @@ const Form = ({
     return () => window.removeEventListener('message', onMessageRecieved);
   }, []);
 
+  // This is a dumb hack to fix the fact that CognitoForms doesn't dispatch resize events when the form changes size,
+  // only when the window changes size. TODO: follow up whenever CognitoForms fixes this.
+  useEffect(() => {
+    const interval = setInterval(() => dispatchGrow(), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // The CF form
   return (
-    <>
+    // eslint-disable-next-line react/jsx-fragments
+    <React.Fragment>
       {!loaded && loading}
       <iframe
         src={iframeSrc}
         title="Form"
         width="100%"
-        height={height}
+        height={height + (grow ? 1 : 0)}
         ref={ref}
         style={{
-          height: `${height}px`,
+          height: `${height + (grow ? 1 : 0)}px`,
           display: !loaded && 'none',
+          marginBottom: `${grow ? 0 : 1}px`,
         }}
       />
-    </>
+    </React.Fragment>
   );
 };
 Form.propTypes = {
