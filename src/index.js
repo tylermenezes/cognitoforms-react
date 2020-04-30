@@ -33,7 +33,7 @@ const Form = ({
 }) => {
   const ref = useRef();
   const [loaded, setLoaded] = useState(false);
-  const [height, setHeight] = useState(100);
+  const [height, setHeight] = useState(0);
   const [grow, dispatchGrow] = useReducer((v) => !v, false);
 
 
@@ -93,9 +93,9 @@ const Form = ({
         height={height + (grow ? 1 : 0)}
         ref={ref}
         style={{
-          height: `${height + (grow ? 1 : 0)}px`,
-          display: !loaded && 'none',
+          height: !loaded ? `1px` : `${height + (grow ? 1 : 0)}px`,
           marginBottom: `${grow ? 0 : 1}px`,
+          opacity: !loaded ? 0 : 1,
           transition: 'all 0.25s ease-in-out',
           ...(style || {}),
         }}

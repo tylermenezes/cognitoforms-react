@@ -73,7 +73,7 @@ var Form = function Form(_ref) {
       loaded = _useState2[0],
       setLoaded = _useState2[1];
 
-  var _useState3 = useState(100),
+  var _useState3 = useState(0),
       _useState4 = _slicedToArray(_useState3, 2),
       height = _useState4[0],
       setHeight = _useState4[1];
@@ -162,9 +162,9 @@ var Form = function Form(_ref) {
       height: height + (grow ? 1 : 0),
       ref: ref,
       style: _objectSpread({
-        height: "".concat(height + (grow ? 1 : 0), "px"),
-        display: !loaded && 'none',
+        height: !loaded ? "1px" : "".concat(height + (grow ? 1 : 0), "px"),
         marginBottom: "".concat(grow ? 0 : 1, "px"),
+        opacity: !loaded ? 0 : 1,
         transition: 'all 0.25s ease-in-out'
       }, style || {})
     }))
