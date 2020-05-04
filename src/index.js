@@ -20,22 +20,23 @@ const getMessage = (event, data) => JSON.stringify({ event, data });
  * A CognitoForms iframe embed, with styling and prefills built-in!
  *
  * @param {object} params React params
- * @param {string} params.accountId         The CognitoForms account ID (the random text after /f/ in your embed code)
- * @param {string} params.formId            The form number (the integer in your embed code)
- * @param {string?} params.css              URL or CSS code to load in the form.
- * @param {object?} params.prefill          Object representing form fields to prefill on the page.
- * @param {React.Component} params.loading  React element to show when the form is loading.
- * @param {object?} params.style            Style to apply to the form.
- * @returns {React.Component}               React component.
+ * @param {string} params.accountId           The CognitoForms account ID (the random text after /f/ in your embed code)
+ * @param {string} params.formId              The form number (the integer in your embed code)
+ * @param {string=} params.css                URL or CSS code to load in the form.
+ * @param {object=} params.prefill            Object representing form fields to prefill on the page.
+ * @param {React.Component} params.loading    React element to show when the form is loading.
+ * @param {object=} params.style              Style to apply to the form.
+ * @param {Function=} params.onSubmit         Function to run after the form is submitted.
+ * @param {Function=} params.onPageChange     Function to run after the page changes.
+ * @returns {React.Component}                 React component.
  */
 const Form = ({
-  accountId, formId, css, prefill, loading, style,
+  accountId, formId, css, prefill, loading, style, onSubmit, onPageChange,
 }) => {
   const ref = useRef();
   const [loaded, setLoaded] = useState(false);
   const [height, setHeight] = useState(0);
   const [grow, dispatchGrow] = useReducer((v) => !v, false);
-
 
   useEffect(() => {
     setLoaded(false);
@@ -49,6 +50,11 @@ const Form = ({
     heightChanged: ({ height: newHeight }) => { setHeight(newHeight); },
     navigate: ({ url }) => { window.top.document.location.href = url; },
     updateHash: ({ hash }) => { window.top.document.location.hash = hash; },
+    fireEvent: ({ name, data }) => {
+      if (name === 'afterSubmit.cognito') return onSubmit(data);
+      if (name === 'afterNavigate.cognito') return onPageChange(data);
+      return null;
+    },
     domReady: (_, src) => {
       src.postMessage(getMessage('init', { embedUrl: 'http://localhost/', entry: '' }), '*');
       src.postMessage(getMessage('setCss', { css }), '*');
@@ -72,12 +78,12 @@ const Form = ({
     if (!ref.current) return () => {};
     window.addEventListener('message', onMessageRecieved, false);
     return () => window.removeEventListener('message', onMessageRecieved);
-  }, []);
+  }, [onSubmit, onPageChange]);
 
   // This is a dumb hack to fix the fact that CognitoForms doesn't dispatch resize events when the form changes size,
   // only when the window changes size. TODO: follow up whenever CognitoForms fixes this.
   useEffect(() => {
-    const interval = setInterval(() => dispatchGrow(), 1000);
+    const interval = setInterval(() => dispatchGrow(), 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -105,17 +111,21 @@ const Form = ({
 };
 Form.propTypes = {
   accountId: PropTypes.string.isRequired,
-  formId: PropTypes.string.isRequired,
+  formId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   css: PropTypes.string,
   prefill: PropTypes.object,
   loading: PropTypes.element,
   style: PropTypes.object,
+  onSubmit: PropTypes.func,
+  onPageChange: PropTypes.func,
 };
 Form.defaultProps = {
   css: null,
   prefill: null,
   loading: null,
   style: {},
+  onSubmit: () => {},
+  onPageChange: () => {},
 };
 
 module.exports = Form;
