@@ -12,7 +12,8 @@ export default () => (
   <>
     <h1>My Demo Page</h1>
     <CognitoForm
-      id={61}
+      formId={61}
+      accountId={`SOMEACCOUNTIDSTRING`}
       prefill={{
         Name: {
           First: 'John',
