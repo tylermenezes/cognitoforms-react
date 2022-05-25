@@ -70,13 +70,13 @@ const Form = ({
   const prefillRef = useStateRef(prefill);
 
   const formContainer = useMemo(() => (
-    <div ref={containerRef} style={{ height: 0, overflow: 'hidden' }}>
+    <div id={id+'-parent'} ref={containerRef} style={{ height: 0, overflow: 'hidden' }}>
       <div id={id} />
     </div>
   ), [id, isBrowser]);
 
   const cssContainer = useMemo(() => (
-    <style type="text/css">{typeof css === 'function' ? css(id) : css}</style>
+    <style type="text/css">{typeof css === 'function' ? css(id+'-parent') : css}</style>
   ), [id, css]);
 
   useEffect(() => {

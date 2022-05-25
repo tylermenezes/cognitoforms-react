@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 export interface FormProps {
   accountId: string,
   formId: string | number,
-  css?: string,
+  css?: string | ((formId: string) => string),
   prefill?: Record<string, any>,
   loading?: ReactNode,
   onReady?: () => any,
