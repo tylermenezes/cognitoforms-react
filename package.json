@@ -17,11 +17,26 @@
     "prop-types": "^15.7.2"
   },
   "name": "@tylermenezes/cognitoforms-react",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Easily embed CognitoForms forms in React",
-  "main": "dist/index.js",
   "repository": "https://github.com/tylermenezes/cognitoforms-react",
   "author": "Tyler Menezes <x@tyler.vc>",
   "license": "Artistic-2.0",
-  "private": false
+  "private": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  }
 }

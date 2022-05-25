@@ -3,18 +3,33 @@
 
 const React = require('react');
 const {
-  useState, useEffect, useRef, useReducer,
+  useState, useEffect, useRef, useMemo,
 } = require('react');
 const PropTypes = require('prop-types');
 
+const SCRIPT_SRC = 'https://www.cognitoforms.com/f/seamless.js';
+
 /**
- * Prepares a message for CognitoForms
- *
- * @param {string} event The event name (init, setCss, or prefill are supported)
- * @param {object} data Event data to send
- * @returns {string} Message to send with postMessage
+ * Because we need to make sure the form <script> never re-renders, we need to use refs.
  */
-const getMessage = (event, data) => JSON.stringify({ event, data });
+function useStateRef(val) {
+  const ref = useRef(val);
+  useEffect(() => { ref.current = val }, [val]);
+  return ref;
+}
+
+function useIsBrowser() {
+  const [isBrowser, setIsBrowser] = useState(false);
+  useEffect(() => setIsBrowser(typeof window !== 'undefined'), [typeof window]);
+  return isBrowser;
+}
+
+const genId = (parts) => 'id-' + parts.map(p => p.toString().replace(/[^a-zA-Z0-9]/g, '')).join('-');
+function useId(parts) {
+  const [id, setId] = useState(genId(parts));
+  useEffect(() => setId(genId(parts)), parts);
+  return id;
+}
 
 /**
  * A CognitoForms iframe embed, with styling and prefills built-in!
@@ -25,105 +40,94 @@ const getMessage = (event, data) => JSON.stringify({ event, data });
  * @param {string=} params.css                URL or CSS code to load in the form.
  * @param {object=} params.prefill            Object representing form fields to prefill on the page.
  * @param {React.Component} params.loading    React element to show when the form is loading.
- * @param {object=} params.style              Style to apply to the form.
+ * @param {Function=} params.onReady          Function to run after the form is ready.
  * @param {Function=} params.onSubmit         Function to run after the form is submitted.
  * @param {Function=} params.onPageChange     Function to run after the page changes.
  * @returns {React.Component}                 React component.
  */
 const Form = ({
-  accountId, formId, css, prefill, loading, style, onSubmit, onPageChange,
+  accountId, formId, css, prefill, loading, onReady, onSubmit, onPageChange,
 }) => {
-  const ref = useRef();
-  const [loaded, setLoaded] = useState(false);
-  const [height, setHeight] = useState(0);
-  const [grow, dispatchGrow] = useReducer((v) => !v, false);
+  const isBrowser = useIsBrowser();
+  const id = useId([accountId, formId]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const containerRef = useRef();
 
+  // When accountId or formId changes, re-render the form.
   useEffect(() => {
-    setLoaded(false);
-    setHeight(100);
+    setIsLoaded(false);
+    if (containerRef.current) {
+      containerRef.current.height = 0;
+      containerRef.current.overflow = 'hidden';
+    }
   }, [accountId, formId]);
 
-  const iframeSrc = `https://services.cognitoforms.com/f/${accountId}?id=${formId}`;
+  // Refs to prevent re-renders of the memo
+  const setIsLoadedRef = useStateRef(setIsLoaded);
+  const onReadyRef = useStateRef(onReady);
+  const onSubmitRef = useStateRef(onSubmit);
+  const onPageChangeRef = useStateRef(onPageChange);
+  const prefillRef = useStateRef(prefill);
 
-  // Event handlers for postMessage
-  const listeners = {
-    heightChanged: ({ height: newHeight }) => { setHeight(newHeight); },
-    navigate: ({ url }) => { window.top.document.location.href = url; },
-    updateHash: ({ hash }) => { window.top.document.location.hash = hash; },
-    fireEvent: ({ name, data }) => {
-      if (name === 'afterSubmit.cognito') return onSubmit(data);
-      if (name === 'afterNavigate.cognito') return onPageChange(data);
-      return null;
-    },
-    domReady: (_, src) => {
-      src.postMessage(getMessage('init', { embedUrl: 'http://localhost/', entry: '' }), '*');
-      src.postMessage(getMessage('setCss', { css }), '*');
-      src.postMessage(getMessage('prefill', { entry: prefill }), '*');
-      setTimeout(() => setLoaded(true), 1000);
-    },
-  };
+  const formContainer = useMemo(() => (
+    <div ref={containerRef} style={{ height: 0, overflow: 'hidden' }}>
+      <div id={id} />
+    </div>
+  ), [id, isBrowser]);
 
-  /**
-   * Processes a postMessage from CognitoForms.
-   */
-  const onMessageRecieved = ({ data, source }) => {
-    if (!ref.current || source !== ref.current.contentWindow) return;
-    if (typeof data !== 'string') return;
-    const payload = JSON.parse(data);
-    if (payload.event in listeners) listeners[payload.event](payload, source);
-  };
+  const cssContainer = useMemo(() => (
+    <style type="text/css">{typeof css === 'function' ? css(id) : css}</style>
+  ), [id, css]);
 
-  // Register our message listener
   useEffect(() => {
-    if (!ref.current) return () => {};
-    window.addEventListener('message', onMessageRecieved, false);
-    return () => window.removeEventListener('message', onMessageRecieved);
-  }, [onSubmit, onPageChange]);
+    if (typeof window === 'undefined' || !containerRef.current) return null;
+    const cfScript = document.createElement('script');
+    cfScript.src = SCRIPT_SRC;
+    cfScript.dataset.key = accountId;
+    cfScript.dataset.form = formId;
+    cfScript.addEventListener('load', () => {
+      window.Cognito
+        .mount(formId.toString(), `#${id}`)
+        .on('ready', () => {
+          setIsLoadedRef.current(true);
+          if (onReadyRef.current) onReadyRef.current();
+          containerRef.current.style.height = 'auto';
+          containerRef.current.style.overflow = 'initial';
+        })
+        .on('afterSubmit', () => onSubmitRef.current())
+        .on('afterNavigate', () => onPageChangeRef.current())
+        .prefill(prefillRef.current || {});
+    });
+    containerRef.current.children[0]?.appendChild(cfScript);
+  }, [id, formId, accountId, containerRef.current, typeof window]);
 
-  // This is a dumb hack to fix the fact that CognitoForms doesn't dispatch resize events when the form changes size,
-  // only when the window changes size. TODO: follow up whenever CognitoForms fixes this.
-  useEffect(() => {
-    const interval = setInterval(() => dispatchGrow(), 4000);
-    return () => clearInterval(interval);
-  }, []);
+  if (!isBrowser) return loading;
 
-  // The CF form
   return (
-    // eslint-disable-next-line react/jsx-fragments
     <React.Fragment>
-      {!loaded && loading}
-      <iframe
-        src={iframeSrc}
-        title="Form"
-        width="100%"
-        height={height + (grow ? 1 : 0)}
-        ref={ref}
-        style={{
-          height: !loaded ? `1px` : `${height + (grow ? 1 : 0)}px`,
-          marginBottom: `${grow ? 0 : 1}px`,
-          opacity: !loaded ? 0 : 1,
-          transition: 'all 0.25s ease-in-out',
-          ...(style || {}),
-        }}
-      />
+      {!isLoaded && loading}
+      {cssContainer}
+      {formContainer}
     </React.Fragment>
   );
 };
+
 Form.propTypes = {
   accountId: PropTypes.string.isRequired,
   formId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   css: PropTypes.string,
   prefill: PropTypes.object,
   loading: PropTypes.element,
-  style: PropTypes.object,
+  onReady: PropTypes.func,
   onSubmit: PropTypes.func,
   onPageChange: PropTypes.func,
 };
+
 Form.defaultProps = {
   css: null,
   prefill: null,
   loading: null,
-  style: {},
+  onReady: () => {},
   onSubmit: () => {},
   onPageChange: () => {},
 };

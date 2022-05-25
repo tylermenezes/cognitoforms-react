@@ -1,6 +1,8 @@
 .DEFAULT_GOAL=main
+.PHONY : main publish
 
 main:
-	@npm run build
-publish:
-	@yarn run build && npm publish
+	@yarn run build
+	@cp src/*.d.ts dist/
+publish: main
+	@npm publish
