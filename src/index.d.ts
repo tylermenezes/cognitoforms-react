@@ -11,5 +11,5 @@ export interface FormProps {
   onPageChange?: () => any,
 }
 
-declare function Form(props: FormProps);
+declare function Form(props: FormProps): JSX.Element;
 export default Form;
