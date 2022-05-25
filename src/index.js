@@ -3,7 +3,7 @@
 
 const React = require('react');
 const {
-  useState, useEffect, useRef, useMemo,
+  useState, useEffect, useRef, useMemo, useReducer,
 } = require('react');
 const PropTypes = require('prop-types');
 
@@ -62,6 +62,15 @@ const Form = ({
     }
   }, [accountId, formId]);
 
+  // We can't use normal hooks because it would rerender the memo, so we'll periodically check
+  // if the ref has initialized yet.
+  const [retry, nextRetry] = useReducer(prev => prev+1, 0);
+  useEffect(() => {
+    if (containerRef.current) return;
+    const retrierTimeout = setTimeout(nextRetry, 100 * retry);
+    return () => clearTimeout(retrierTimeout);
+  }, [retry]);
+
   // Refs to prevent re-renders of the memo
   const setIsLoadedRef = useStateRef(setIsLoaded);
   const onReadyRef = useStateRef(onReady);
@@ -108,6 +117,7 @@ const Form = ({
       {!isLoaded && loading}
       {cssContainer}
       {formContainer}
+      <div style={{ display: 'none' }}>{retry}</div>
     </React.Fragment>
   );
 };
@@ -115,7 +125,7 @@ const Form = ({
 Form.propTypes = {
   accountId: PropTypes.string.isRequired,
   formId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  css: PropTypes.string,
+  css: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
   prefill: PropTypes.object,
   loading: PropTypes.element,
   onReady: PropTypes.func,
