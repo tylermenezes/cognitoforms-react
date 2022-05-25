@@ -1,6 +1,6 @@
 {
   "name": "@tylermenezes/cognitoforms-react",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "description": "Easily embed CognitoForms forms in React",
   "repository": "https://github.com/tylermenezes/cognitoforms-react",
   "author": "Tyler Menezes <x@tyler.vc>",

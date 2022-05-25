@@ -67,7 +67,7 @@ const Form = ({
   const [retry, nextRetry] = useReducer(prev => prev+1, 0);
   useEffect(() => {
     if (containerRef.current) return;
-    const retrierTimeout = setTimeout(nextRetry, 100 * retry);
+    const retrierTimeout = setTimeout(nextRetry, 350 * retry);
     return () => clearTimeout(retrierTimeout);
   }, [retry]);
 
