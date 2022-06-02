@@ -14,20 +14,20 @@ const SCRIPT_SRC = 'https://www.cognitoforms.com/f/seamless.js';
  */
 function useStateRef(val) {
   const ref = useRef(val);
-  useEffect(() => { ref.current = val }, [val]);
+  useEffect(() => { ref.current = val; }, [val]);
   return ref;
 }
 
 function useIsBrowser() {
   const [isBrowser, setIsBrowser] = useState(false);
-  useEffect(() => setIsBrowser(typeof window !== 'undefined'), [typeof window]);
+  useEffect(() => { setIsBrowser(typeof window !== 'undefined'); }, [typeof window]);
   return isBrowser;
 }
 
 const genId = (parts) => 'id-' + parts.map(p => p.toString().replace(/[^a-zA-Z0-9]/g, '')).join('-');
 function useId(parts) {
   const [id, setId] = useState(genId(parts));
-  useEffect(() => setId(genId(parts)), parts);
+  useEffect(() => { setId(genId(parts)); }, parts);
   return id;
 }
 
@@ -66,7 +66,7 @@ const Form = ({
   // if the ref has initialized yet.
   const [retry, nextRetry] = useReducer(prev => prev+1, 0);
   useEffect(() => {
-    if (containerRef.current) return;
+    if (containerRef.current) return () => {};
     const retrierTimeout = setTimeout(nextRetry, 350 * retry);
     return () => clearTimeout(retrierTimeout);
   }, [retry]);
@@ -89,7 +89,7 @@ const Form = ({
   ), [id, css]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !containerRef.current) return null;
+    if (typeof window === 'undefined' || !containerRef.current) return;
     const cfScript = document.createElement('script');
     cfScript.src = SCRIPT_SRC;
     cfScript.dataset.key = accountId;
