@@ -1,6 +1,6 @@
 {
   "name": "@tylermenezes/cognitoforms-react",
-  "version": "2.0.14",
+  "version": "2.1.0",
   "description": "Easily embed CognitoForms forms in React",
   "repository": "https://github.com/tylermenezes/cognitoforms-react",
   "author": "Tyler Menezes <x@tyler.vc>",
@@ -34,7 +34,7 @@
     "eslint": "^6.8.0"
   },
   "peerDependencies": {
-    "react": "^16.13.1"
+    "react": "^16.13.1 || ^17.0.0 || ^18.0.0"
   },
   "dependencies": {
     "prop-types": "^15.7.2"
