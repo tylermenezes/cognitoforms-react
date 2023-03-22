@@ -99,9 +99,11 @@ const Form = ({
         .mount(formId.toString(), `#${id}`)
         .on('ready', () => {
           setIsLoadedRef.current(true);
-          if (onReadyRef.current) onReadyRef.current();
-          containerRef.current?.style.height = 'auto';
-          containerRef.current?.style.overflow = 'initial';
+          if (onReadyRef.current) {
+            onReadyRef.current();
+            containerRef.current.style.height = 'auto';
+            containerRef.current.style.overflow = 'initial';
+          }
         })
         .on('afterSubmit', () => onSubmitRef.current())
         .on('afterNavigate', () => onPageChangeRef.current())
